@@ -7,15 +7,16 @@ const Notify = {
   async enable() {
     if (!this.supported()) { toast('This browser does not support notifications. Use the calendar export instead.'); return false; }
     const perm = await Notification.requestPermission();
-    Store.state.notif.enabled = perm === 'granted';
-    Store.save();
+    Device.state.notif.enabled = perm === 'granted';
+    Device.state.notif.asked = true;
+    Device.save();
     if (perm !== 'granted') toast('Notifications were blocked. You can allow them in browser settings.');
     return perm === 'granted';
   },
 
   async show(title, body, tag) {
     toast(`🔔 ${title}: ${body}`);
-    if (!Store.state.notif.enabled || !this.supported() || Notification.permission !== 'granted') return;
+    if (!Device.state.notif.enabled || !this.supported() || Notification.permission !== 'granted') return;
     try {
       const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
       if (reg) await reg.showNotification(title, { body, tag, icon: 'icon.svg', badge: 'icon.svg' });
@@ -25,10 +26,10 @@ const Notify = {
 
   // Fire each reminder at most once, keyed by a stable string.
   once(key, title, body) {
-    const sent = Store.state.notif.sent;
+    const sent = Device.state.notif.sent;
     if (sent[key]) return;
     sent[key] = Date.now();
-    Store.save();
+    Device.save();
     this.show(title, body, key);
   },
 
@@ -36,8 +37,7 @@ const Notify = {
     const s = Store.state;
     const today = isoDate();
     const now = nowTime();
-    const momName = s.profile.momName || 'Mom';
-
+    
     // Medicines due now (within the last 2 hours and not taken)
     for (const m of s.meds.filter(m => m.active)) {
       for (const slot of m.times) {
@@ -46,7 +46,7 @@ const Notify = {
         const minutesLate = (new Date().getHours() * 60 + new Date().getMinutes()) - (h * 60 + mi);
         if (minutesLate > 120) continue;
         if (medTaken(m.id, today, slot)) continue;
-        this.once(`med:${m.id}:${today}:${slot}`, `💊 ${m.name}`, `Time for ${m.dose || m.perDose + ' ' + m.unit} (${slot})`);
+        this.once(`med:${m.id}:${today}:${slot}`, `💊 ${m.name}`, `Time for ${m.dose || m.perDose + ' ' + m.unit} (${fmtTime(slot)})`);
       }
       const left = medDaysLeft(m);
       if (left !== null && left <= (m.refillDays ?? 5)) {
@@ -66,18 +66,18 @@ const Notify = {
     const info = pregnancyInfo();
     if (info) {
       for (const t of TESTS) {
-        if (s.tests[t.id]?.done || t.optional) continue;
+        if (s.tests[t.id]?.done || t.optional || s.appts.some(a => a.testId === t.id)) continue;
         if (info.week >= t.from && info.week <= t.to) this.once(`test:${t.id}`, '🧪 Test window open', `${t.name} (weeks ${t.from}–${t.to}). Time to book it.`);
       }
       if (info.week >= 4 && WEEKS[info.week]) this.once(`week:${info.week}`, `Week ${info.week} 🎉`, `Baby is about the size of a ${WEEKS[info.week][0]}. Open the app for this week's guide.`);
     }
 
     // Evening nudge for unfinished daily tasks
-    if (now >= (s.notif.dailyTime || '21:00')) {
+    if (now >= (Device.state.notif.dailyTime || '21:00')) {
       const tasks = dailyTasksFor(today);
       const done = s.daily.log[today] || [];
       const left = tasks.filter(t => !done.includes(t.id)).length;
-      if (left > 0) this.once(`daily:${today}`, 'Daily check-in', `${left} of today's tasks for ${momName} & you are still open.`);
+      if (left > 0) this.once(`daily:${today}`, 'Daily check-in', `${left} of today's tasks are still open.`);
     }
 
     // Overdue to-dos, once a day
@@ -88,14 +88,14 @@ const Notify = {
   },
 
   prune() {
-    const sent = Store.state.notif.sent;
+    const sent = Device.state.notif.sent;
     const cutoff = Date.now() - 45 * 86400000;
     let changed = false;
     for (const k of Object.keys(sent)) {
       // Keep one-time keys (tests/weeks/appointments); drop old daily ones.
       if (/^(med|stock|daily|todo):/.test(k) && sent[k] < cutoff) { delete sent[k]; changed = true; }
     }
-    if (changed) Store.save();
+    if (changed) Device.save();
   },
 
   start() {

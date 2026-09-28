@@ -1,6 +1,7 @@
 // Offline support: cache the app shell, serve cache-first, refresh in the background.
-const CACHE = 'nest-v1';
-const ASSETS = ['./', 'index.html', 'css/styles.css', 'js/content.js', 'js/store.js', 'js/notify.js', 'js/app.js', 'icon.svg', 'manifest.webmanifest'];
+const CACHE = 'nest-v2';
+const ASSETS = ['./', 'index.html', 'css/styles.css', 'js/content.js', 'js/store.js', 'js/config.js', 'js/sync.js', 'js/quickadd.js',
+  'js/notify.js', 'js/app.js', 'js/vendor/supabase.js', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

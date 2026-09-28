@@ -1,26 +1,66 @@
-# Go-Wanderella — Nest 🤰👶
+# Nest 🤰👶
 
-**Nest** is a pregnancy companion for first-time parents. It's one app for the whole journey: her health, medicines, doctor visits, tests, food, money, daily tasks, reading, and the baby once they arrive.
+Nest is a pregnancy companion for two people. It covers her health, medicines, doctor visits, tests, food, money, daily tasks, reading, and the baby once they arrive. It runs on both phones and stays in sync between them.
 
-It's a plain HTML/CSS/JS installable web app (PWA). There's no server, no account and no build step. **All data stays on the phone** (browser `localStorage`).
+**The app asks, you tap.** The home screen is a short feed of questions with one-tap answers:
+
+- 💊 "Iron · 2:00 PM" → **✓ Taken**
+- 💗 "How is Priya feeling today?" → 😄 🙂 😐 😔
+- 🤒 "Anything bothering her?" → tap *Nausea*, *Back pain*… or **Nothing today 👍**
+- ⚖️ "Weekly weigh-in. Last: 62.4 kg" → **− / +** → Save
+- 📦 "Iron runs out in ~3 days" → **+30**
+- 🧪 "Time to book: Anomaly scan" → **Book it** (the date is suggested for you)
+- 🩺 "How did the NT scan go?" → **✓ Done**, 📝 Notes, 💰 Cost
+
+Answered cards disappear. When nothing needs you, it says so.
+
+**Or just tell it**, by typing or with the 🎤 mic:
+
+| You say | Nest does |
+|---|---|
+| "paid 2500 for NT scan" | Expense ₹2,500 · Tests & scans (marked claimable) |
+| "bp 150/95, feeling tired and headache" | Logs BP (with a ⚠️ high warning) + symptoms |
+| "anomaly scan tomorrow 10:30am" | Appointment, linked to the anomaly-scan checklist item |
+| "buy car seat by next week" | To-do with a due date |
+| "bought 30 iron" | Adds 30 tablets to the Iron stock |
+| "took all meds" | Marks today's due doses taken |
+
+You see a preview before anything is saved, and every delete can be undone.
 
 ## What's inside
 
-| Section | What it does |
+| Section | Highlights |
 |---|---|
-| **Today** | Current week + day, trimester, days to go, baby's size, a dad tip for the week, items that need attention (low stock, tests due, overdue to-dos), today's medicines, next appointment, tasks and water |
-| **Week by week** | Weeks 1–42: baby's development, changes in her body, what you can do, and tests around that time |
-| **Health** | Daily log (weight, BP, sugar, symptoms, mood, sleep, notes), weight chart, BP history with ≥140/90 warnings, **kick counter**, **contraction timer** with the 5-1-1 hint |
-| **Meds** | Medicines with dose, up to 3 reminder times, and stock. Marking a dose taken reduces the stock; you get a refill warning N days before it runs out, plus a 7-day adherence count |
-| **Visits** | Appointments with "questions to ask" and the doctor's notes, plus a checklist of the standard tests and scans (dating scan, NT/double marker, anomaly scan, OGTT, Tdap…) with their target dates worked out from the due date |
-| **Food** | Water counter, daily nutrition checklist, meal notes, foods to eat and avoid, daily nutrient targets, morning-sickness tips |
-| **Tasks** | Daily tasks for her, you, or both (new ones unlock by week, e.g. kick counts from week 28), custom tasks, a streak count, one-off to-dos with due dates |
-| **Money** | Budget, expenses by category, planned purchases with estimates, insurance-claim tracking |
-| **Read & listen** | Curated books and podcasts for her and for you, with want / reading / finished status and progress |
-| **Checklists** | Hospital bags (mom, baby, dad), baby gear, paperwork & admin, **things first-time dads miss**, first weeks after birth |
-| **Baby** | After birth: one-tap logs for feeds, diapers and sleep, plus growth measurements with a chart |
-| **Emergency (SOS)** | One-tap calls to the doctor, hospital and ambulance, warning signs, and her key details (blood group, allergies, meds) ready for the hospital |
-| **Settings** | Profile, notifications, **calendar export (.ics)**, backup export/import, erase data |
+| **Today** | Week + day, baby's size, the check-in feed above, a weekly tip for the dad |
+| **Health** | Mood, symptoms, sleep and weight on one screen, BP and sugar, a weight chart, **kick counter**, **contraction timer** (5-1-1) |
+| **Meds** | Add common medicines with one tap; time-of-day chips; stock goes down automatically when a dose is taken; refill alerts |
+| **Visits** | Appointments with "questions for the doctor", plus a standard tests & scans checklist with dates worked out from the due date |
+| **Food** | Water, a daily nutrition checklist, foods to eat and avoid, nutrient targets |
+| **Tasks** | Daily habits for her, you, or both (new ones unlock by week), and to-dos that understand "tomorrow" or "next week" |
+| **Money** | Expenses added by tapping a category icon, budget, planned purchases, insurance claims |
+| **Read & listen** | Books and podcasts for each of you, with progress |
+| **Checklists** | Hospital bags, baby gear, paperwork, *things first-time dads miss*, the first weeks after birth |
+| **Baby** | After birth: one-tap feed, diaper and sleep logs, growth chart |
+| **SOS** | One-tap calls, warning signs, and her details ready for the hospital |
+
+## Sharing between both phones (Supabase)
+
+Nest works fully offline on one phone. To share with your partner, connect a free Supabase project (about 5 minutes):
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. **SQL Editor → New query**: paste all of [`supabase/schema.sql`](supabase/schema.sql) and click **Run**. It is safe to re-run.
+3. **Project Settings → API**: copy the **Project URL** and the **anon / publishable** key into [`js/config.js`](js/config.js).
+   The anon key is meant to be public. The row-level security in `schema.sql` is what keeps your data private.
+4. **Authentication → URL Configuration**: set **Site URL** to wherever you host Nest (e.g. your GitHub Pages URL), so the confirmation-email links open the app.
+   *(Optional)* **Authentication → Providers → Email**: turn off "Confirm email" to skip the confirmation step.
+5. In the app, go to **More → Share with partner**. Each of you creates an account. One of you taps **Create our family space** and shares the code (e.g. `ABCD-EF23`); the other taps **Join**.
+
+How sync behaves:
+- **Live**: a dose ticked on her phone shows up on yours within a second.
+- **Offline-first**: everything works without internet, and changes sync when you're back online.
+- **No lost edits**: if you both change things at the same moment, the changes are merged item by item. Two expenses added at once both stay. You editing a medicine's stock while she edits its notes keeps both edits. Only when you both change the *same field* does the last phone to sync win.
+- **Private**: only members of your family space can read or write its data. Joining requires the invite code.
+- **Per phone**: each phone keeps its own reminder settings.
 
 ## Run it
 
@@ -28,26 +68,24 @@ It's a plain HTML/CSS/JS installable web app (PWA). There's no server, no accoun
 python3 -m http.server 8000   # then open http://localhost:8000
 ```
 
-### Put it on your phones (free)
-1. On GitHub: **Settings → Pages → Build and deployment → Deploy from a branch**, pick the branch and `/ (root)`.
-2. Open the Pages URL on her phone (and yours).
-3. Choose **Add to Home Screen**. It then opens like an app and works offline.
+To put it on your phones for free: GitHub **Settings → Pages → Deploy from a branch**, pick this branch and `/ (root)`. Open the URL on each phone and choose **Add to Home Screen**. It then opens like an app and works offline.
 
-## Reminders — read this
-- While the app is open (or recently in the background), it sends notifications for doses, appointments (the evening before and 2 hours before), refills, test windows, the new week, and an evening check-in for daily tasks.
-- Web apps **can't reliably notify when fully closed**. For alarms that always fire, use **Settings → Export to calendar**. This adds daily medicine alarms, appointments, test windows and the due date to the phone's calendar.
-
-## Sharing between both of you
-The data lives on one device. Use **Settings → Export backup** and import the file on the other phone. Export regularly: clearing browser data erases everything.
+## Reminders
+Nest sends notifications for doses, appointments (the evening before and 2 hours before), refills, test windows, the new week, and an evening check-in for daily tasks. It can do this while it's open or recently used. Web apps can't reliably notify when fully closed, so use **Settings → Add to calendar (.ics)** for alarms that always ring.
 
 ## Files
 ```
-index.html            app shell + bottom navigation
-css/styles.css        styles (light + dark)
-js/content.js         week-by-week guide, tests, food, books, checklists
-js/store.js           storage, backup, date & pregnancy math
-js/notify.js          reminders + .ics calendar export
-js/app.js             all screens and interactions
+index.html                 app shell, bottom navigation, bottom sheet
+css/styles.css             styles (light + dark)
+js/content.js              week-by-week guide, tests, food, books, checklists, presets
+js/store.js                local storage, dates, pregnancy math, 3-way merge
+js/sync.js                 Supabase auth, family space, live sync
+js/config.js               ← your Supabase URL + anon key
+js/quickadd.js             "tell Nest" sentence parser + voice input
+js/notify.js               reminders + calendar export
+js/app.js                  screens, check-in feed, actions
+js/vendor/supabase.js      supabase-js v2.117.2 (MIT), bundled so it works offline
+supabase/schema.sql        tables, row-level security, invite codes, realtime
 sw.js, manifest.webmanifest, icon.svg   offline / installable app
 ```
 

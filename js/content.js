@@ -208,3 +208,39 @@ const PLANNED_DEFAULTS = [
 
 const SYMPTOMS = ['Nausea', 'Vomiting', 'Fatigue', 'Headache', 'Back pain', 'Heartburn', 'Constipation', 'Swelling', 'Cramps', 'Insomnia', 'Spotting', 'Dizziness', 'Breathless', 'Anxiety'];
 const MOODS = ['😄', '🙂', '😐', '😔', '😢', '😤'];
+
+// ---------- one-tap presets (so adding things is tapping, not typing) ----------
+// Timings are only suggestions — match what the doctor prescribed.
+const MED_PRESETS = [
+  { name: 'Folic acid', times: ['09:00'], notes: '' },
+  { name: 'Prenatal multivitamin', times: ['09:00'], notes: 'After breakfast' },
+  { name: 'Iron', times: ['14:00'], notes: 'After lunch · not with milk, tea or calcium' },
+  { name: 'Calcium', times: ['10:00', '21:00'], notes: 'Keep 2 hours apart from iron' },
+  { name: 'Vitamin D', times: ['09:00'], notes: '' },
+  { name: 'DHA / Omega-3', times: ['20:00'], notes: 'With dinner' },
+];
+
+const TIME_SLOTS = [['07:00', '🌅 Early'], ['09:00', '☀️ Morning'], ['14:00', '🍽 Afternoon'], ['18:00', '🌇 Evening'], ['21:00', '🌙 Night']];
+
+const APPT_KINDS = [['Check-up', '🩺'], ['Scan', '🖥'], ['Blood test', '🩸'], ['Vaccine', '💉'], ['Class', '🎓'], ['Other', '📅']];
+
+const CATEGORY_ICONS = {
+  'Doctor visits': '🩺', 'Tests & scans': '🧪', 'Medicines': '💊', 'Food & supplements': '🥗', 'Maternity clothes': '👗',
+  'Baby gear': '🍼', 'Hospital & delivery': '🏥', 'Classes': '🎓', 'Insurance': '🛡', 'Other': '🧾',
+};
+const CLAIMABLE_CATEGORIES = ['Doctor visits', 'Tests & scans', 'Medicines', 'Hospital & delivery'];
+
+// Words that hint at an expense category when typing/saying "paid 2500 for NT scan"
+const CATEGORY_WORDS = [
+  ['Tests & scans', /scan|ultrasound|sonography|usg|test|blood|report|lab|nt\b|nipt|marker|tiffa|anomaly|doppler|gtt|ogtt/],
+  ['Medicines', /medicine|meds|tablet|pharmacy|chemist|capsule|syrup|folic|iron|calcium|vitamin|injection/],
+  ['Doctor visits', /doctor|dr\.?\s|consult|visit|fee|opd|gyn|obgyn/],
+  ['Hospital & delivery', /hospital|delivery|admission|labou?r|c-?section|room/],
+  ['Baby gear', /crib|cot|stroller|pram|diaper|nappy|car seat|carrier|bottle|baby|swaddle|onesie/],
+  ['Maternity clothes', /maternity|dress|kurti|bra|clothes|leggings/],
+  ['Food & supplements', /food|fruit|grocer|protein|milk|dry ?fruit|nuts|supplement|meal/],
+  ['Classes', /class|course|yoga|lamaze|workshop/],
+  ['Insurance', /insurance|premium|policy/],
+];
+
+const SLEEP_OPTIONS = [['4', '< 5h'], ['5.5', '5–6h'], ['7', '6–8h'], ['8.5', '8h+']];
