@@ -1,6 +1,6 @@
 {
-  "name": "Nest — Pregnancy Companion",
-  "short_name": "Nest",
+  "name": "Nestling — Pregnancy Companion",
+  "short_name": "Nestling",
   "description": "Health, meds, visits, food, money, tasks, reading and baby tracking for the pregnancy journey.",
   "start_url": "./#home",
   "scope": "./",

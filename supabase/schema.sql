@@ -1,4 +1,4 @@
--- Nest: shared family space for two (or more) people.
+-- Nestling: shared family space for two (or more) people.
 -- Run once in Supabase: Dashboard → SQL Editor → New query → paste → Run.
 -- Safe to re-run.
 

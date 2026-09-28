@@ -112,7 +112,7 @@ function icsDate(date, time) { return date.replace(/-/g, '') + (time ? 'T' + tim
 function buildICS() {
   const s = Store.state;
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Nest//Pregnancy Companion//EN', 'CALSCALE:GREGORIAN'];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Nestling//Pregnancy Companion//EN', 'CALSCALE:GREGORIAN'];
   const ev = (id, fields, alarms) => {
     lines.push('BEGIN:VEVENT', `UID:${id}@nest`, `DTSTAMP:${stamp}`, ...fields);
     for (const trig of alarms) lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Reminder', `TRIGGER:${trig}`, 'END:VALARM');

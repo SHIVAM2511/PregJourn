@@ -1,4 +1,4 @@
-// "Just tell Nest": turn a typed or spoken sentence into entries.
+// "Just tell Nestling": turn a typed or spoken sentence into entries.
 //   "paid 2500 for NT scan"            → expense ₹2,500 · Tests & scans
 //   "bp 120/80 weight 62.4, headache"  → today's health log
 //   "anomaly scan tuesday 10:30am"     → appointment

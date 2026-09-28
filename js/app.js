@@ -1,4 +1,4 @@
-// Nest — pregnancy companion. Plain JS, hash-routed views, event delegation.
+// Nestling — pregnancy companion. Plain JS, hash-routed views, event delegation.
 // Design rule: the app asks, you tap. Typing is the fallback, never the default.
 
 const UI = {
@@ -152,7 +152,7 @@ VIEWS.home = () => {
   }
   const cards = checkins();
   out += cards.length ? `<div class="feed">${cards.join('')}</div>`
-    : `<section class="card done-card"><p class="big-emoji">🎉</p><p><b>All caught up.</b></p><p class="muted small">Nothing needs you right now. Nest will nudge you when something does.</p></section>`;
+    : `<section class="card done-card"><p class="big-emoji">🎉</p><p><b>All caught up.</b></p><p class="muted small">Nothing needs you right now. Nestling will nudge you when something does.</p></section>`;
   out += `<nav class="tiles" aria-label="Sections">
     ${[['#week/' + (info ? info.week : 1), '📖', 'This week'], ['#food', '🥗', 'Food'], ['#tasks', '✅', 'Tasks'], ['#money', '💰', 'Money'],
       ['#library', '📚', 'Read & listen'], ['#lists', '🧳', 'Checklists'], ['#baby', '👶', 'Baby'], ['#account', '👫', 'Sharing']]
@@ -163,7 +163,7 @@ VIEWS.home = () => {
 
 function quickBar() {
   return `<form data-form="quick" class="quick-bar" autocomplete="off">
-    <input name="q" placeholder="Tell Nest… “paid 800 for scan”, “bp 118/76”" aria-label="Tell Nest anything">
+    <input name="q" placeholder="Tell Nestling… “paid 800 for scan”, “bp 118/76”" aria-label="Tell Nestling anything">
     ${Voice.supported() ? '<button type="button" class="mic" data-act="voice" aria-label="Speak">🎤</button>' : ''}
     <button type="submit" class="go" aria-label="Add">↵</button>
   </form>`;
@@ -247,7 +247,7 @@ function checkins() {
     out.push(checkin('🔔', 'Get reminders for meds & visits?', `<div class="ci-actions"><button class="btn" data-act="enableNotif">Turn on</button><button class="btn ghost" data-act="notifLater">Not now</button></div>`));
   }
   if (Sync.configured() && ['signedout', 'nohousehold'].includes(Sync.status) && !Device.state.shareAsked) {
-    out.push(checkin('👫', 'Share Nest with your partner', `<p class="ci-sub">Both phones see the same meds, visits and logs — live.</p><div class="ci-actions"><a class="btn" href="#account">Set up</a><button class="btn ghost" data-act="shareLater">Later</button></div>`));
+    out.push(checkin('👫', 'Share Nestling with your partner', `<p class="ci-sub">Both phones see the same meds, visits and logs — live.</p><div class="ci-actions"><a class="btn" href="#account">Set up</a><button class="btn ghost" data-act="shareLater">Later</button></div>`));
   }
 
   // Daily tasks (tap to tick)
@@ -277,14 +277,14 @@ function checkins() {
 function wizard() {
   const p = Store.state.profile;
   const steps = [
-    () => `<p class="big-emoji">🎉</p><h1>Congratulations!</h1><p>Nest keeps track of meds, doctor visits, tests, food, money and the baby — and reminds you both. Setup takes under a minute.</p>
+    () => `<p class="big-emoji">🎉</p><h1>Congratulations!</h1><p>Nestling keeps track of meds, doctor visits, tests, food, money and the baby — and reminds you both. Setup takes under a minute.</p>
       <div class="stack"><button class="btn" data-act="wizNext">Get started</button>
       ${Sync.configured() ? '<a class="btn ghost" href="#account">My partner already set it up</a>' : ''}</div>`,
     () => `<h1>When is the baby due?</h1><form data-form="wizDue" class="form">
       <label>Due date<input type="date" name="dueDate" value="${esc(p.dueDate)}"></label>
       <details ${p.lmp && !p.dueDate ? 'open' : ''}><summary>Don't know it? Use the first day of her last period</summary><label>First day of last period<input type="date" name="lmp" value="${esc(p.lmp)}"></label></details>
       <button class="btn" type="submit">Next</button></form>`,
-    () => `<h1>Your names</h1><p class="muted">So Nest can talk to you properly. Optional.</p><form data-form="wizNames" class="form">
+    () => `<h1>Your names</h1><p class="muted">So Nestling can talk to you properly. Optional.</p><form data-form="wizNames" class="form">
       <label>Mom-to-be<input name="momName" value="${esc(p.momName)}" autocomplete="off"></label>
       <label>Dad-to-be<input name="dadName" value="${esc(p.dadName)}" autocomplete="off"></label>
       <button class="btn" type="submit">Next</button><button class="btn ghost" type="button" data-act="wizNext">Skip</button></form>`,
@@ -743,7 +743,7 @@ VIEWS.account = () => {
   return `<h1>Share with your partner</h1>
     ${card(esc(h ? h.name : ''), `<p class="${st === 'error' ? 'warn' : st === 'synced' ? 'ok' : 'muted'}">${esc(statusText)}</p>
       <p class="label">Invite code</p><div class="code-row"><span class="code">${esc(code)}</span>${navigator.share ? '<button class="btn small" data-act="shareCode">Share</button>' : '<button class="btn small ghost" data-act="copyCode">Copy</button>'}</div>
-      <p class="small muted">Your partner installs Nest, creates an account, and enters this code.</p>
+      <p class="small muted">Your partner installs Nestling, creates an account, and enters this code.</p>
       <p class="label">Members</p><ul class="list">${Sync.members.map(m => `<li>${esc(m.display_name || 'Member')}${m.user_id === Sync.userId ? ' <span class="muted">(you)</span>' : ''}</li>`).join('')}</ul>
       <div class="btn-row"><button class="btn small ghost" data-act="syncNow">Sync now</button><button class="btn small ghost" data-act="signOut">Sign out</button><button class="btn small ghost danger" data-act="leaveHousehold">Leave</button></div>`)}`;
 };
@@ -768,12 +768,12 @@ VIEWS.settings = () => {
     ${card('Reminders', `<p>Notifications on this phone: <b>${n.enabled && perm === 'granted' ? 'On' : 'Off'}</b></p>
       ${n.enabled && perm === 'granted' ? '' : '<button class="btn" data-act="enableNotif">Turn on notifications</button>'}
       <form data-form="notifTime" class="form inline"><label>Evening task check-in<input type="time" name="dailyTime" value="${esc(n.dailyTime)}"></label><button class="btn small" type="submit">Save</button></form>
-      <p class="small muted">Reminders fire while Nest is open or recently used. For alarms that always ring, even when the app is closed, add everything to your phone's calendar:</p>
+      <p class="small muted">Reminders fire while Nestling is open or recently used. For alarms that always ring, even when the app is closed, add everything to your phone's calendar:</p>
       <button class="btn ghost" data-act="exportICS">📅 Add to calendar (.ics)</button>`)}
     ${card('Backup', `<p class="small">${Sync.connected() ? 'Your data is also saved in your family space.' : 'Data lives only on this phone — export a backup now and then.'}</p>
       <div class="btn-row"><button class="btn ghost" data-act="exportJSON">⬇️ Export backup</button><label class="btn ghost file">⬆️ Import backup<input type="file" accept="application/json,.json" data-change="importJSON" hidden></label></div>`)}
     ${card('Danger zone', '<button class="btn ghost danger" data-act="reset">Erase all data on this phone</button>')}
-    <p class="disclaimer">Nest is an organiser, not medical advice. Always follow her doctor's guidance.</p>`;
+    <p class="disclaimer">Nestling is an organiser, not medical advice. Always follow her doctor's guidance.</p>`;
 };
 
 VIEWS.more = () => `<h1>More</h1><nav class="tiles big-tiles" aria-label="All sections">
@@ -980,8 +980,8 @@ const ACTIONS = {
   async enableNotif() { if (await Notify.enable()) { toast('Reminders on ✓'); Notify.check(); } render(); },
   notifLater() { Device.state.notif.asked = true; Device.save(); render(); },
   shareLater() { Device.state.shareAsked = true; Device.save(); render(); },
-  exportICS() { download('nest-reminders.ics', buildICS(), 'text/calendar'); toast('Open the downloaded file to add it to your calendar.'); },
-  exportJSON() { download(`nest-backup-${isoDate()}.json`, Store.exportJSON(), 'application/json'); },
+  exportICS() { download('nestling-reminders.ics', buildICS(), 'text/calendar'); toast('Open the downloaded file to add it to your calendar.'); },
+  exportJSON() { download(`nestling-backup-${isoDate()}.json`, Store.exportJSON(), 'application/json'); },
   reset() {
     const shared = Sync.connected();
     if (!confirm(shared ? 'Erase everything on this phone and sign out? Your shared family space is not touched.' : 'Erase ALL data on this phone? This cannot be undone.')) return;
@@ -1000,7 +1000,7 @@ const ACTIONS = {
   },
   async shareCode() {
     const code = Sync.household.invite_code.replace(/^(.{4})(.+)$/, '$1-$2');
-    try { await navigator.share({ title: 'Join me on Nest', text: `Join our family space on Nest with code ${code}`, url: location.origin + location.pathname }); } catch (e) { /* cancelled */ }
+    try { await navigator.share({ title: 'Join me on Nestling', text: `Join our family space on Nestling with code ${code}`, url: location.origin + location.pathname }); } catch (e) { /* cancelled */ }
   },
   copyCode() { if (navigator.clipboard) navigator.clipboard.writeText(Sync.household.invite_code).then(() => toast('Code copied')); },
   signOut() { busy(async () => { await Sync.signOut(); toast('Signed out. Data stays on this phone.'); }); },
