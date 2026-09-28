@@ -14,8 +14,8 @@ const Notify = {
     return perm === 'granted';
   },
 
+  // System notifications only; inside the app the Today screen already shows what's due.
   async show(title, body, tag) {
-    toast(`🔔 ${title}: ${body}`);
     if (!Device.state.notif.enabled || !this.supported() || Notification.permission !== 'granted') return;
     try {
       const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
@@ -70,14 +70,6 @@ const Notify = {
         if (info.week >= t.from && info.week <= t.to) this.once(`test:${t.id}`, '🧪 Test window open', `${t.name} (weeks ${t.from}–${t.to}). Time to book it.`);
       }
       if (info.week >= 4 && WEEKS[info.week]) this.once(`week:${info.week}`, `Week ${info.week} 🎉`, `Baby is about the size of a ${WEEKS[info.week][0]}. Open the app for this week's guide.`);
-    }
-
-    // Evening nudge for unfinished daily tasks
-    if (now >= (Device.state.notif.dailyTime || '21:00')) {
-      const tasks = dailyTasksFor(today);
-      const done = s.daily.log[today] || [];
-      const left = tasks.filter(t => !done.includes(t.id)).length;
-      if (left > 0) this.once(`daily:${today}`, 'Daily check-in', `${left} of today's tasks are still open.`);
     }
 
     // Overdue to-dos, once a day

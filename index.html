@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Nestling — Pregnancy Companion</title>
   <meta name="description" content="A pregnancy companion for two: meds, doctor visits, tests, health check-ins, food, money, reading and the baby — shared between both phones.">
-  <meta name="theme-color" content="#fbf7f4" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1c1917" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#fbf6f1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1419" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -26,11 +29,11 @@
   <main id="main" tabindex="-1"></main>
 
   <nav class="tabbar" aria-label="Main">
-    <a href="#home" data-tab="home"><span>🏠</span>Today</a>
-    <a href="#health" data-tab="health"><span>❤️</span>Health</a>
-    <a href="#meds" data-tab="meds"><span>💊</span>Meds</a>
-    <a href="#visits" data-tab="visits"><span>🩺</span>Visits</a>
-    <a href="#more" data-tab="more"><span>☰</span>More</a>
+    <a href="#home" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>Today</a>
+    <a href="#meds" data-tab="meds"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="8.5" width="17" height="7" rx="3.5" transform="rotate(-35 12 12)"/><path d="m9.2 8 5.6 8"/></svg>Meds</a>
+    <button type="button" class="fab" data-act="openAdd" aria-label="Add something"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <a href="#visits" data-tab="visits"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a4 4 0 0 0 8 0v-2"/><circle cx="18" cy="12" r="2"/></svg>Visits</a>
+    <a href="#more" data-tab="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</a>
   </nav>
 
   <dialog id="sheet" class="sheet" aria-label="Details"></dialog>

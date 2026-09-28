@@ -2,19 +2,15 @@
 
 Nestling is a pregnancy companion for two people. It covers her health, medicines, doctor visits, tests, food, money, daily tasks, reading, and the baby once they arrive. It runs on both phones and stays in sync between them.
 
-**The app asks, you tap.** The home screen is a short feed of questions with one-tap answers:
+**It tells you things, and asks one thing at a time.**
 
-- 💊 "Iron · 2:00 PM" → **✓ Taken**
-- 💗 "How is Priya feeling today?" → 😄 🙂 😐 😔
-- 🤒 "Anything bothering her?" → tap *Nausea*, *Back pain*… or **Nothing today 👍**
-- ⚖️ "Weekly weigh-in. Last: 62.4 kg" → **− / +** → Save
-- 📦 "Iron runs out in ~3 days" → **+30**
-- 🧪 "Time to book: Anomaly scan" → **Book it** (the date is suggested for you)
-- 🩺 "How did the NT scan go?" → **✓ Done**, 📝 Notes, 💰 Cost
+- **Hero:** a progress ring, the baby's size as a picture (🫑 at week 18), and days to go. Her mood and today's water are single taps right in the hero.
+- **Up next:** one card at a time, e.g. "Did Priya take today's medicines? → Yes, all 2". Answer it or tap *Later*, and the next one slides in.
+- **Coming up:** built automatically from what the app already knows: the next visit, test windows opening, "Halfway there in 10 days", "Iron runs out in 12 days", the due date.
+- **This week:** swipeable cards for the baby, for her and for you.
+- **One small thing today:** a single suggested habit instead of a checklist.
 
-Answered cards disappear. When nothing needs you, it says so.
-
-**Or just tell it**, by typing or with the 🎤 mic:
+**Adding things** is the ＋ button in the tab bar: big tiles (How she feels, Expense, Visit, Medicine, Weight, Kick count…), or just say it, by typing or with the 🎤 mic:
 
 | You say | Nestling does |
 |---|---|
@@ -31,7 +27,7 @@ You see a preview before anything is saved, and every delete can be undone.
 
 | Section | Highlights |
 |---|---|
-| **Today** | Week + day, baby's size, the check-in feed above, a weekly tip for the dad |
+| **Today** | Everything above: progress ring, baby size, one-card-at-a-time check-ins, automatic timeline |
 | **Health** | Mood, symptoms, sleep and weight on one screen, BP and sugar, a weight chart, **kick counter**, **contraction timer** (5-1-1) |
 | **Meds** | Add common medicines with one tap; time-of-day chips; stock goes down automatically when a dose is taken; refill alerts |
 | **Visits** | Appointments with "questions for the doctor", plus a standard tests & scans checklist with dates worked out from the due date |

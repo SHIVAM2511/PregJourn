@@ -133,43 +133,139 @@ function chipBtns(target, options, current = '') {
 // ---------- views ----------
 const VIEWS = {};
 
+// ---------- Today: tells you things, asks one thing at a time ----------
+const SIZE_EMOJI = [
+  [/poppy|sesame/, '🌱'], [/lentil/, '🫘'], [/blueberry/, '🫐'], [/raspberry|strawberry/, '🍓'], [/cherry/, '🍒'], [/fig|plum/, '🫐'],
+  [/lime|lemon/, '🍋'], [/peach/, '🍑'], [/apple|pomegranate/, '🍎'], [/avocado/, '🥑'], [/bell pepper/, '🫑'], [/mango|papaya/, '🥭'],
+  [/banana/, '🍌'], [/carrot/, '🥕'], [/grapefruit/, '🍊'], [/corn/, '🌽'], [/cauliflower/, '🥦'], [/lettuce|cabbage/, '🥬'],
+  [/eggplant/, '🍆'], [/cucumber/, '🥒'], [/coconut/, '🥥'], [/pineapple/, '🍍'], [/cantaloupe|honeydew|winter melon/, '🍈'],
+  [/watermelon/, '🍉'], [/squash|pumpkin/, '🎃'],
+];
+function sizeEmoji(week) {
+  const w = WEEKS[Math.min(42, Math.max(1, week))];
+  if (!w || w[0] === '—') return '✨';
+  return (SIZE_EMOJI.find(([re]) => re.test(w[0])) || [, '👶'])[1];
+}
+function greeting() {
+  const h = new Date().getHours();
+  return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
+function ring(pct, label, sub) {
+  const r = 46, c = 2 * Math.PI * r;
+  return `<div class="ring" role="img" aria-label="${esc(label)} ${esc(sub)}, ${pct}% of the way">
+    <svg viewBox="0 0 108 108"><circle class="ring-track" cx="54" cy="54" r="${r}"/><circle class="ring-fill" cx="54" cy="54" r="${r}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - pct / 100)).toFixed(1)}"/></svg>
+    <div class="ring-label"><b>${label}</b><span>${sub}</span></div></div>`;
+}
+function inDays(date) {
+  const n = daysBetween(isoDate(), date);
+  return n <= 0 ? 'now' : n === 1 ? 'tomorrow' : n < 14 ? `in ${n} days` : n < 60 ? `in ${Math.round(n / 7)} weeks` : `in ${Math.round(n / 30)} months`;
+}
+function snoozed(key) {
+  const z = Device.state.snooze || {};
+  return z.date === isoDate() && (z.keys || []).includes(key);
+}
+
 VIEWS.home = () => {
   const s = Store.state;
   if (!s.setupDone && !s.baby.born) return wizard();
   const info = pregnancyInfo();
-  let out = quickBar();
+  const today = isoDate();
+  const h = healthPeek(today) || {};
+  const fd = foodPeek(today);
+  let out = `<p class="greet">${greeting()}${s.profile.dadName ? ', ' + esc(s.profile.dadName) : ''}</p>`;
+
+  // Hero
   if (s.baby.born) {
-    out += `<section class="hero"><p class="eyebrow">Welcome to the world</p><h1>${esc(s.baby.name || 'Baby')} 👶</h1>
-      <p>${s.baby.dob ? `${daysBetween(s.baby.dob, isoDate())} days old` : ''}</p><a class="btn" href="#baby">Open baby tracker</a></section>`;
+    out += `<section class="hero"><p class="eyebrow">Welcome to the world</p><h1 class="display">${esc(s.baby.name || 'Baby')} 👶</h1>
+      <p>${s.baby.dob ? `${daysBetween(s.baby.dob, today)} days old` : ''}</p><a class="btn" href="#baby">Open baby tracker</a></section>`;
   } else if (info) {
-    out += `<a class="hero hero-link" href="#week/${info.week}">
-      <p class="eyebrow">${esc(momName())} · Trimester ${info.trimester}</p>
-      <h1>Week ${info.week}<small> + ${info.day} day${info.day === 1 ? '' : 's'}</small></h1>
-      <p>${sizeLine(info.week)}</p>
-      ${progressBar(info.percent, 'Pregnancy progress')}
-      <div class="hero-row"><span><b>${Math.max(0, info.daysLeft)}</b> days to go</span><span>Due ${fmtDate(info.due, { day: 'numeric', month: 'short' })} ›</span></div>
-    </a>`;
+    const w = WEEKS[Math.min(42, Math.max(1, info.week))];
+    out += `<section class="hero">
+      <div class="hero-top">
+        ${ring(info.percent, `Week ${info.week}`, `+${info.day} day${info.day === 1 ? '' : 's'}`)}
+        <a class="baby-size" href="#week/${info.week}"><span class="fruit" aria-hidden="true">${sizeEmoji(info.week)}</span>
+          <span class="size-text">${w && w[0] !== '—' ? `Size of a <b>${esc(w[0])}</b>` : 'Tiny and growing'}<small>${[w && w[1], w && w[2]].filter(Boolean).map(esc).join(' · ')}</small></span></a>
+      </div>
+      <div class="hero-stats"><span><b>${Math.max(0, info.daysLeft)}</b> days to go</span><span>Trimester <b>${info.trimester}</b></span><span>Due <b>${fmtDate(info.due, { day: 'numeric', month: 'short' })}</b></span></div>
+      <div class="hero-row">
+        <div class="mood-mini">${h.mood
+          ? `<button class="mood-set" data-act="moodReset">${esc(momName())} feels <span>${h.mood}</span></button>`
+          : `<span class="mini-label">How's ${esc(momName())}?</span><div class="mood-dots">${MOODS.slice(0, 5).map(x => `<button data-act="mood" data-val="${x}" aria-label="Mood ${x}">${x}</button>`).join('')}</div>`}</div>
+        <div class="water"><span class="mini-label">Water</span><div class="drops" role="group" aria-label="Water: ${fd.water} of 8 glasses">${[...Array(8)].map((_, i) => `<button class="drop ${i < fd.water ? 'on' : ''}" data-act="waterSet" data-n="${i + 1}" aria-label="${i + 1} glasses"></button>`).join('')}</div></div>
+      </div>
+    </section>`;
   }
-  const cards = checkins();
-  out += cards.length ? `<div class="feed">${cards.join('')}</div>`
-    : `<section class="card done-card"><p class="big-emoji">🎉</p><p><b>All caught up.</b></p><p class="muted small">Nothing needs you right now. Nestling will nudge you when something does.</p></section>`;
-  out += `<nav class="tiles" aria-label="Sections">
-    ${[['#week/' + (info ? info.week : 1), '📖', 'This week'], ['#food', '🥗', 'Food'], ['#tasks', '✅', 'Tasks'], ['#money', '💰', 'Money'],
-      ['#library', '📚', 'Read & listen'], ['#lists', '🧳', 'Checklists'], ['#baby', '👶', 'Baby'], ['#account', '👫', 'Sharing']]
-      .map(([h, i, l]) => `<a href="${h}"><span>${i}</span>${l}</a>`).join('')}
-  </nav>`;
+
+  // Up next: one card at a time
+  const queue = checkins().filter(c => !snoozed(c.key));
+  if (queue.length) {
+    const c = queue[0];
+    out += `<section class="upnext"><div class="sec-h"><h2>Up next</h2>${queue.length > 1 ? `<span class="dots-count">${queue.slice(0, 6).map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}${queue.length > 6 ? '…' : ''}</span>` : ''}</div>
+      <article class="ci ${c.kind || ''}" data-key="${c.key}"><div class="ci-icon" aria-hidden="true">${c.icon}</div><div class="ci-body"><p class="ci-title">${c.title}</p>${c.body}
+      ${c.noLater ? '' : `<button class="later" data-act="later" data-key="${c.key}">Later</button>`}</div></article></section>`;
+  } else {
+    out += `<section class="upnext"><div class="calm"><span aria-hidden="true">🌿</span><div><b>All caught up</b><p>Nothing needs you right now. Enjoy the day.</p></div></div></section>`;
+  }
+
+  // This week carousel
+  if (info) {
+    const w = WEEKS[Math.min(42, Math.max(1, info.week))];
+    out += `<section><div class="sec-h"><h2>This week</h2><a class="link" href="#week/${info.week}">Week ${info.week} →</a></div>
+      <div class="carousel">
+        <article class="slide s-baby"><span>👶 Baby</span><p>${esc(w[3])}</p></article>
+        <article class="slide s-mom"><span>🤰 ${esc(momName())}</span><p>${esc(w[4])}</p></article>
+        <article class="slide s-dad"><span>💡 For ${esc(dadName())}</span><p>${esc(w[5])}</p></article>
+      </div></section>`;
+  }
+
+  // Coming up (built automatically)
+  const upcoming = comingUp();
+  if (upcoming.length) {
+    out += `<section><div class="sec-h"><h2>Coming up</h2><a class="link" href="#visits">Visits →</a></div>
+      <ol class="timeline">${upcoming.map(u => `<li class="${u.kind || ''}"><span class="t-dot" aria-hidden="true">${u.icon}</span><div><b>${u.title}</b><small>${u.sub}</small></div><span class="t-when">${u.when}</span></li>`).join('')}</ol></section>`;
+  }
+
+  // One small thing
+  const tasks = dailyTasksFor(today);
+  const doneIds = s.daily.log[today] || [];
+  const open = tasks.filter(t => !doneIds.includes(t.id));
+  if (open.length) {
+    const t = open[new Date().getDate() % open.length];
+    out += `<section class="small-thing"><div><span class="mini-label">One small thing today · ${whoLabel(t.who)}</span><p>${esc(t.text)}</p></div>
+      <button class="round-check" data-act="dailyTap" data-id="${t.id}" aria-label="Mark done">✓</button></section>
+      <p class="center"><a class="link" href="#tasks">${tasks.length - open.length}/${tasks.length} daily habits done · see all</a></p>`;
+  }
   return out;
 };
 
-function quickBar() {
-  return `<form data-form="quick" class="quick-bar" autocomplete="off">
-    <input name="q" placeholder="Tell Nestling… “paid 800 for scan”, “bp 118/76”" aria-label="Tell Nestling anything">
-    ${Voice.supported() ? '<button type="button" class="mic" data-act="voice" aria-label="Speak">🎤</button>' : ''}
-    <button type="submit" class="go" aria-label="Add">↵</button>
-  </form>`;
+// Things coming up, derived from what's already known — no typing needed.
+function comingUp() {
+  const s = Store.state;
+  const today = isoDate();
+  const info = s.baby.born ? null : pregnancyInfo();
+  const items = [];
+  for (const a of s.appts.filter(a => !a.done && a.date >= today)) {
+    items.push({ date: a.date, icon: '🩺', title: esc(a.title), sub: [a.time && fmtTime(a.time), a.place && esc(a.place)].filter(Boolean).join(' · ') || 'Appointment', when: relDay(a.date), kind: 'appt' });
+  }
+  if (info) {
+    for (const t of TESTS.filter(t => !t.optional && !s.tests[t.id]?.done && !s.appts.some(a => a.testId === t.id))) {
+      const start = dateForWeek(t.from), end = addDays(dateForWeek(t.to), 6);
+      if (end < today) continue;
+      items.push({ date: start < today ? today : start, icon: '🧪', title: esc(t.name), sub: `Book for weeks ${t.from}–${t.to}`, when: start <= today ? 'due now' : inDays(start), kind: start <= today ? 'due' : '' });
+    }
+    for (const [wk, icon, title] of [[14, '🌤', 'Second trimester begins'], [20, '🎉', 'Halfway there!'], [24, '💪', 'Viability milestone'], [28, '🌙', 'Third trimester begins'], [32, '🧳', 'Time to pack the hospital bags'], [37, '🌸', 'Full term'], [40, '👶', 'Due date']]) {
+      const d = dateForWeek(wk);
+      if (d > today) items.push({ date: d, icon, title, sub: `Week ${wk}`, when: inDays(d), kind: 'milestone' });
+    }
+  }
+  for (const m of s.meds.filter(m => m.active)) {
+    const left = medDaysLeft(m);
+    if (left !== null && left < 21) items.push({ date: addDays(today, left), icon: '📦', title: `${esc(m.name)} runs out`, sub: `${m.stock} left`, when: left <= 0 ? 'now' : inDays(addDays(today, left)), kind: left <= (m.refillDays ?? 5) ? 'due' : '' });
+  }
+  return items.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
 }
 
-// The home feed: each card is a question with one-tap answers. Answered cards disappear.
+// Things that need a tap, most urgent first. Each has a stable key so "Later" can hide it for today.
 function checkins() {
   const s = Store.state;
   const today = isoDate();
@@ -177,101 +273,87 @@ function checkins() {
   const info = s.baby.born ? null : pregnancyInfo();
   const h = healthPeek(today) || {};
   const out = [];
+  const add = (key, icon, title, body, extra = {}) => out.push({ key, icon, title, body, ...extra });
 
-  // Medicines due now (or overdue today)
   const due = [];
   for (const m of s.meds.filter(m => m.active)) for (const slot of m.times) if (slot <= addMinutes(now, 45) && !medTaken(m.id, today, slot)) due.push({ m, slot });
   due.sort((a, b) => a.slot.localeCompare(b.slot));
-  if (due.length) {
-    out.push(checkin('💊', due.length === 1 ? `${esc(due[0].m.name)} · ${fmtTime(due[0].slot)}` : `${due.length} medicines due`,
-      `${due.length > 1 ? `<ul class="mini-list">${due.map(({ m, slot }) => `<li><span>${esc(m.name)} <span class="muted">${fmtTime(slot)}</span></span><button class="btn small" data-act="takeMed" data-id="${m.id}" data-slot="${slot}">Taken</button></li>`).join('')}</ul>
-        <div class="ci-actions"><button class="btn" data-act="takeAll">✓ All taken</button></div>`
-      : `${due[0].m.notes ? `<p class="ci-sub">${esc(due[0].m.notes)}</p>` : ''}<div class="ci-actions"><button class="btn" data-act="takeMed" data-id="${due[0].m.id}" data-slot="${due[0].slot}">✓ Taken</button></div>`}`, 'accent'));
+  if (due.length === 1) {
+    add('meds', '💊', `Did ${esc(momName())} take ${esc(due[0].m.name)}?`, `<p class="ci-sub">${fmtTime(due[0].slot)}${due[0].m.notes ? ' · ' + esc(due[0].m.notes) : ''}</p>
+      <div class="ci-actions"><button class="btn" data-act="takeMed" data-id="${due[0].m.id}" data-slot="${due[0].slot}">Yes, taken</button></div>`, { kind: 'accent' });
+  } else if (due.length > 1) {
+    add('meds', '💊', `Did ${esc(momName())} take today's medicines?`, `<div class="pill-row">${due.map(({ m, slot }) => `<button class="pill-tog" data-act="takeMed" data-id="${m.id}" data-slot="${slot}">${esc(m.name)} <small>${fmtTime(slot)}</small></button>`).join('')}</div>
+      <div class="ci-actions"><button class="btn" data-act="takeAll">Yes, all ${due.length}</button></div>`, { kind: 'accent' });
   }
-
-  // Appointments that happened and need closing, then today's/tomorrow's
+  if (h.mood && !h.symptomsAsked) {
+    add('symptoms', h.mood, 'Anything bothering her today?', `<div class="chips">${SYMPTOMS.slice(0, 10).map(x => `<button class="chip-btn ${h.symptoms?.includes(x) ? 'on' : ''}" data-act="symptom" data-val="${x}">${x}</button>`).join('')}</div>
+      <div class="ci-actions"><button class="btn" data-act="symptomsDone">${h.symptoms?.length ? 'Done' : 'Nothing today 👍'}</button></div>`);
+  }
+  if (h.symptoms?.includes('Spotting')) add('bleed', '⚠️', 'Bleeding logged — call the doctor', `<div class="ci-actions">${tel(s.profile.doctorPhone) || '<a class="btn" href="#emergency">Emergency info</a>'}</div>`, { kind: 'danger', noLater: true });
   for (const a of s.appts.filter(a => !a.done && (a.date < today || (a.date === today && a.time && a.time < now))).slice(0, 2)) {
-    out.push(checkin('🩺', `How did “${esc(a.title)}” go?`, `<p class="ci-sub">${relDay(a.date)}${a.time ? ' · ' + fmtTime(a.time) : ''}</p>
-      <div class="ci-actions"><button class="btn" data-act="doneAppt" data-id="${a.id}">✓ Done</button><button class="btn ghost" data-act="openAppt" data-id="${a.id}">📝 Notes</button><button class="btn ghost" data-act="openExpense" data-note="${esc(a.title)}">💰 Cost</button></div>`));
+    add('went:' + a.id, '🩺', `How did “${esc(a.title)}” go?`, `<div class="ci-actions"><button class="btn" data-act="doneAppt" data-id="${a.id}">✓ Went fine</button><button class="btn ghost" data-act="openAppt" data-id="${a.id}">Add notes</button><button class="btn ghost" data-act="openExpense" data-note="${esc(a.title)}">Add cost</button></div>`);
   }
-  for (const a of s.appts.filter(a => !a.done && (a.date === addDays(today, 1) || (a.date === today && (!a.time || a.time >= now))))) {
-    out.push(checkin('📅', `${relDay(a.date)}: ${esc(a.title)}`, `<p class="ci-sub">${a.time ? fmtTime(a.time) : ''}${a.place ? ' · ' + esc(a.place) : ''}</p>
-      ${a.questions ? `<p class="small">❓ ${esc(a.questions).replace(/\n/g, '<br>❓ ')}</p>` : ''}
-      <div class="ci-actions"><button class="btn ghost" data-act="addQuestion" data-id="${a.id}">+ Question for doctor</button></div>`));
+  for (const a of s.appts.filter(a => !a.done && a.date === addDays(today, 1))) {
+    add('tmrw:' + a.id, '📅', `Tomorrow: ${esc(a.title)}`, `<p class="ci-sub">${a.time ? fmtTime(a.time) : ''}${a.place ? ' · ' + esc(a.place) : ''}${a.questions ? ` · ${a.questions.split('\n').length} question(s) ready` : ''}</p>
+      <div class="ci-actions"><button class="btn ghost" data-act="addQuestion" data-id="${a.id}">+ Question for the doctor</button></div>`);
   }
-
-  // How is she feeling?
-  if (!h.mood) {
-    out.push(checkin('💗', `How is ${esc(momName())} feeling today?`, `<div class="mood-row">${MOODS.map(x => `<button class="mood-btn" data-act="mood" data-val="${x}" aria-label="Mood ${x}">${x}</button>`).join('')}</div>`));
-  } else if (!h.symptomsAsked) {
-    out.push(checkin(h.mood, 'Anything bothering her today?', `<div class="chips">${SYMPTOMS.map(x => `<button class="chip-btn ${h.symptoms?.includes(x) ? 'on' : ''}" data-act="symptom" data-val="${x}">${x}</button>`).join('')}</div>
-      <div class="ci-actions"><button class="btn" data-act="symptomsDone">${h.symptoms?.length ? 'Done' : 'Nothing today 👍'}</button></div>`));
-  }
-  if (h.symptoms?.includes('Spotting')) out.push(checkin('⚠️', 'Spotting / bleeding logged', `<p class="ci-sub">Please call the doctor about any bleeding.</p><div class="ci-actions">${tel(s.profile.doctorPhone) || '<a class="btn ghost" href="#emergency">Emergency info</a>'}</div>`, 'danger'));
-
-  // Refills
   for (const m of s.meds.filter(m => m.active)) {
     const left = medDaysLeft(m);
     if (left !== null && left <= (m.refillDays ?? 5)) {
-      out.push(checkin('📦', `${esc(m.name)} ${left <= 0 ? 'has run out' : `runs out in ~${left} day${left === 1 ? '' : 's'}`}`, `<p class="ci-sub">Bought more? Tap how many:</p>
-        <div class="ci-actions">${[10, 15, 30, 60].map(n => `<button class="btn ghost" data-act="refill" data-id="${m.id}" data-n="${n}">+${n}</button>`).join('')}</div>`));
+      add('refill:' + m.id, '📦', `${esc(m.name)} ${left <= 0 ? 'has run out' : `runs out in ~${left} day${left === 1 ? '' : 's'}`}`, `<p class="ci-sub">Bought more?</p>
+        <div class="ci-actions">${[15, 30, 60].map(n => `<button class="btn ghost" data-act="refill" data-id="${m.id}" data-n="${n}">+${n}</button>`).join('')}</div>`);
     }
   }
-
-  // Weekly weigh-in
-  const lw = lastWeight();
-  if (info && (!lw || daysBetween(lw.date, today) >= 7)) {
-    const v = lw ? Number(lw.weight) : 60;
-    out.push(checkin('⚖️', 'Weekly weigh-in', `<p class="ci-sub">${lw ? `Last: ${lw.weight} kg, ${relDay(lw.date).toLowerCase()}` : 'Her weight today (kg)'}</p>
-      <div class="stepper"><button class="btn ghost" data-act="wstep" data-d="-0.1" aria-label="Decrease">−</button><input id="wval" type="number" step="0.1" inputmode="decimal" value="${v.toFixed(1)}" aria-label="Weight in kg"><button class="btn ghost" data-act="wstep" data-d="0.1" aria-label="Increase">+</button><button class="btn" data-act="saveWeight">Save</button></div>`));
-  }
-
-  // Tests to book
   if (info) {
     for (const t of TESTS) {
       if (!t.optional && testStatus(t, info)[0] === 'due' && !s.appts.some(a => a.testId === t.id)) {
-        out.push(checkin('🧪', `Time to book: ${esc(t.name)}`, `<p class="ci-sub">Weeks ${t.from}–${t.to}. ${esc(t.detail)}</p>
-          <div class="ci-actions"><button class="btn" data-act="bookTest" data-id="${t.id}">Book it</button><button class="btn ghost" data-act="testDone" data-id="${t.id}">Already done</button></div>`));
+        add('test:' + t.id, '🧪', `Time to book the ${esc(t.name.replace(/\s*\(.*\)/, ''))}`, `<p class="ci-sub">Weeks ${t.from}–${t.to} · ${esc(t.detail)}</p>
+          <div class="ci-actions"><button class="btn" data-act="bookTest" data-id="${t.id}">Book it</button><button class="btn ghost" data-act="testDone" data-id="${t.id}">Already done</button></div>`);
       }
     }
+    const lw = lastWeight();
+    if (!lw || daysBetween(lw.date, today) >= 7) {
+      const v = lw ? Number(lw.weight) : 60;
+      add('weigh', '⚖️', 'Weekly weigh-in', `<p class="ci-sub">${lw ? `Last: ${lw.weight} kg, ${relDay(lw.date).toLowerCase()}` : 'Optional — helps the doctor track growth'}</p>
+        <div class="stepper"><button class="btn ghost" data-act="wstep" data-d="-0.1" aria-label="Decrease">−</button><input id="wval" type="number" step="0.1" inputmode="decimal" value="${v.toFixed(1)}" aria-label="Weight in kg"><button class="btn ghost" data-act="wstep" data-d="0.1" aria-label="Increase">+</button><button class="btn" data-act="saveWeight">Save</button></div>`);
+    }
+    if (info.week >= 28 && now >= '11:00' && !s.kicks.some(k => isoDate(new Date(k.start)) === today)) {
+      add('kicks', '👣', 'Daily kick count', `<p class="ci-sub">Lie on her side and tap for each movement until 10.</p><div class="ci-actions"><button class="btn" data-act="goKicks">Start</button></div>`);
+    }
   }
-
-  // Kick count
-  if (info && info.week >= 28 && now >= '11:00' && !s.kicks.some(k => isoDate(new Date(k.start)) === today)) {
-    out.push(checkin('👣', 'Daily kick count', `<p class="ci-sub">Lie on her side and count movements until 10.</p><div class="ci-actions"><button class="btn" data-act="goKicks">Start counting</button></div>`));
-  }
-
-  // One-time setup nudges
   const n = Device.state.notif;
   if (!n.asked && typeof Notification !== 'undefined' && Notification.permission === 'default') {
-    out.push(checkin('🔔', 'Get reminders for meds & visits?', `<div class="ci-actions"><button class="btn" data-act="enableNotif">Turn on</button><button class="btn ghost" data-act="notifLater">Not now</button></div>`));
+    add('notif', '🔔', 'Want gentle reminders?', `<p class="ci-sub">For medicines, visits and refills.</p><div class="ci-actions"><button class="btn" data-act="enableNotif">Turn on</button><button class="btn ghost" data-act="notifLater">No thanks</button></div>`, { noLater: true });
   }
   if (Sync.configured() && ['signedout', 'nohousehold'].includes(Sync.status) && !Device.state.shareAsked) {
-    out.push(checkin('👫', 'Share Nestling with your partner', `<p class="ci-sub">Both phones see the same meds, visits and logs — live.</p><div class="ci-actions"><a class="btn" href="#account">Set up</a><button class="btn ghost" data-act="shareLater">Later</button></div>`));
-  }
-
-  // Daily tasks (tap to tick)
-  const tasks = dailyTasksFor(today);
-  const doneIds = s.daily.log[today] || [];
-  const open = tasks.filter(t => !doneIds.includes(t.id));
-  if (open.length) {
-    out.push(checkin('✅', `Today · ${tasks.length - open.length}/${tasks.length} done`, `<ul class="tap-list">${open.slice(0, 5).map(t => `<li><button data-act="dailyTap" data-id="${t.id}"><span class="box"></span>${esc(t.text)}<small>${whoLabel(t.who)}</small></button></li>`).join('')}</ul>
-      ${open.length > 5 ? `<a class="link" href="#tasks">+${open.length - 5} more</a>` : ''}`));
-  }
-
-  // Water
-  const fd = foodPeek(today);
-  if (fd.water < 10) {
-    out.push(checkin('💧', `Water · ${fd.water}/10 glasses`, `${progressBar(fd.water * 10, 'Water')}<div class="ci-actions"><button class="btn" data-act="water" data-d="1">+1 glass</button>${fd.water ? '<button class="btn ghost" data-act="water" data-d="-1" aria-label="Remove a glass">−</button>' : ''}</div>`));
-  }
-
-  // Weekly tip
-  if (info) {
-    const w = WEEKS[Math.min(42, Math.max(1, info.week))];
-    if (w) out.push(checkin('💡', `Week ${info.week} tip for ${esc(dadName())}`, `<p class="ci-sub">${esc(w[5])}</p>`, 'soft'));
+    add('share', '👫', `Share with ${esc(momName())}`, `<p class="ci-sub">Both phones see the same things, live.</p><div class="ci-actions"><a class="btn" href="#account">Set up</a><button class="btn ghost" data-act="shareLater">Not now</button></div>`, { noLater: true });
   }
   return out;
 }
+
+// The ＋ button: everything you might add, as big tiles, plus "say it".
+function sheetAdd() {
+  const born = Store.state.baby.born;
+  const tiles = [
+    ['addFeeling', '💗', 'How she feels'], ['openExpense', '💰', 'Expense'], ['openAppt', '📅', 'Visit'], ['openMed', '💊', 'Medicine'],
+    ['addWeight', '⚖️', 'Weight'], ['openBP', '🩺', 'BP & sugar'], ['goKicks', '👣', 'Kick count'], ['goContractions', '⏱', 'Contractions'],
+    ['addTodo', '📝', 'To-do'], ...(born ? [['goBaby', '👶', 'Baby log']] : []),
+  ];
+  openSheet('Add', `<form data-form="quick" class="say" autocomplete="off">
+      <input name="q" placeholder="Or just say it… “paid 800 for scan”" aria-label="Say it">
+      ${Voice.supported() ? '<button type="button" class="mic" data-act="voice" aria-label="Speak">🎤</button>' : ''}<button type="submit" class="go" aria-label="Add">↵</button></form>
+    <div class="add-grid">${tiles.map(([act, i, l]) => `<button data-act="${act}"><span>${i}</span>${l}</button>`).join('')}</div>`);
+}
+
+function sheetFeeling() {
+  const h = healthPeek() || {};
+  openSheet(`How is ${esc(momName())} today?`, `<div class="feel">
+    <div class="mood-row">${MOODS.map(x => `<button class="mood-btn ${h.mood === x ? 'on' : ''}" data-act="mood" data-val="${x}" aria-label="Mood ${x}">${x}</button>`).join('')}</div>
+    <p class="label">Anything bothering her?</p><div class="chips">${SYMPTOMS.map(x => `<button class="chip-btn ${h.symptoms?.includes(x) ? 'on' : ''}" data-act="symptom" data-val="${x}">${x}</button>`).join('')}</div>
+    <p class="label">Sleep last night</p><div class="chips">${SLEEP_OPTIONS.map(([v, l]) => `<button class="chip-btn ${String(h.sleep) === v ? 'on' : ''}" data-act="sleep" data-val="${v}">${l}</button>`).join('')}</div>
+    <button class="btn wide" data-act="closeSheet">Done</button></div>`);
+}
+function refreshFeeling() { if (sheetOpen() && document.querySelector('#sheet .feel')) sheetFeeling(); }
 
 // ---------- setup wizard ----------
 function wizard() {
@@ -535,8 +617,8 @@ VIEWS.food = () => {
   const extra = !info ? '' : info.trimester === 1 ? 'no extra calories needed yet' : info.trimester === 2 ? 'about 340 extra calories a day' : 'about 450 extra calories a day';
   return `<h1>Food & nutrition</h1>
     ${card('Today', `
-      <div class="row"><span>💧 Water: <b>${fd.water}</b> / 10 glasses</span><span class="btn-row"><button class="btn small ghost" data-act="water" data-d="-1" aria-label="Remove a glass">−</button><button class="btn small" data-act="water" data-d="1">+ Glass</button></span></div>
-      ${progressBar(Math.min(100, fd.water * 10), 'Water')}
+      <div class="row"><span>💧 Water: <b>${fd.water}</b> / 8 glasses</span><span class="btn-row"><button class="btn small ghost" data-act="water" data-d="-1" aria-label="Remove a glass">−</button><button class="btn small" data-act="water" data-d="1">+ Glass</button></span></div>
+      ${progressBar(Math.min(100, Math.round(fd.water * 12.5)), 'Water')}
       <p class="label">Tap what she's had today</p>
       <div class="chips">${FOOD_CHECKS.map(([id, label]) => `<button class="chip-btn ${fd.checks.includes(id) ? 'on' : ''}" data-act="foodCheck" data-id="${id}">${esc(label)}</button>`).join('')}</div>
       <p class="label">Meals (optional)</p>
@@ -568,8 +650,8 @@ VIEWS.tasks = () => {
     ${card('Every day', `<ul class="checks">${tasks.map(t => `<li class="row ${done.includes(t.id) ? 'is-done' : ''}"><label class="check"><input type="checkbox" data-act="daily" data-id="${t.id}" ${done.includes(t.id) ? 'checked' : ''}> ${esc(t.text)}</label>
       <span>${pill(whoLabel(t.who))}<button class="icon-btn" data-act="hideTask" data-id="${t.id}" aria-label="Remove task">✕</button></span></li>`).join('')}</ul>
       ${streak ? `<p class="ok">🔥 ${streak}-day streak (at least half done)</p>` : ''}
-      <form data-form="dailyTask" class="form inline"><input name="text" required placeholder="Add a daily habit" aria-label="New daily task">
-        <select name="who" aria-label="For whom"><option value="both">Both</option><option value="mom">${esc(momName())}</option><option value="dad">${esc(dadName())}</option></select><button class="btn small" type="submit">Add</button></form>
+      <details><summary>+ Add your own habit</summary><form data-form="dailyTask" class="form inline"><input name="text" required placeholder="e.g. Evening walk together" aria-label="New daily task">
+        <select name="who" aria-label="For whom"><option value="both">Both</option><option value="mom">${esc(momName())}</option><option value="dad">${esc(dadName())}</option></select><button class="btn small" type="submit">Add</button></form></details>
       ${s.daily.hidden.length ? `<button class="btn small ghost" data-act="restoreTasks">Restore ${s.daily.hidden.length} removed</button>` : ''}`)}
     ${card('To-dos', `<form data-form="todo" class="form inline"><input name="text" required placeholder="e.g. Buy car seat by next week" aria-label="New to-do"><button class="btn small" type="submit">Add</button></form>
       ${todos.length ? `<ul class="checks">${todos.map(t => `<li class="row ${t.done ? 'is-done' : ''}"><label class="check"><input type="checkbox" data-act="todo" data-id="${t.id}" ${t.done ? 'checked' : ''}> ${esc(t.text)}</label>
@@ -633,10 +715,10 @@ VIEWS.library = () => {
         ${st.state === 'reading' ? `<label class="small range">Progress <input type="range" min="0" max="100" step="5" value="${st.progress || 0}" data-change="libProgress" data-id="${b.id}"> ${st.progress || 0}%</label>` : ''}
         ${b.custom ? `<button class="icon-btn" data-act="delBook" data-id="${b.id}" aria-label="Delete">✕</button>` : ''}</div></li>`;
     }).join('')}</ul>`)}
-    ${card('Add a book or podcast', `<form data-form="book" class="form"><div class="grid2"><label>Title<input name="title" required></label><label>Author / host<input name="by"></label></div>
+    ${card('', `<details><summary>+ Add a book or podcast</summary><form data-form="book" class="form"><div class="grid2"><label>Title<input name="title" required></label><label>Author / host<input name="by"></label></div>
       <div class="grid2"><label>Type<select name="type"><option value="book">Book</option><option value="podcast">Podcast / audio</option></select></label>
       <label>For<select name="for"><option value="both">Both</option><option value="mom">${esc(momName())}</option><option value="dad">${esc(dadName())}</option></select></label></div>
-      <button class="btn" type="submit">Add</button></form>`)}`;
+      <button class="btn" type="submit">Add</button></form></details>`)}`;
 };
 
 // ---------- checklists ----------
@@ -767,7 +849,6 @@ VIEWS.settings = () => {
     ${card('Sharing', `<p>${Sync.connected() ? `Shared with ${Sync.members.length} ${Sync.members.length === 1 ? 'person' : 'people'}` : 'Only on this phone'}</p><a class="btn ghost" href="#account">Manage sharing</a>`)}
     ${card('Reminders', `<p>Notifications on this phone: <b>${n.enabled && perm === 'granted' ? 'On' : 'Off'}</b></p>
       ${n.enabled && perm === 'granted' ? '' : '<button class="btn" data-act="enableNotif">Turn on notifications</button>'}
-      <form data-form="notifTime" class="form inline"><label>Evening task check-in<input type="time" name="dailyTime" value="${esc(n.dailyTime)}"></label><button class="btn small" type="submit">Save</button></form>
       <p class="small muted">Reminders fire while Nestling is open or recently used. For alarms that always ring, even when the app is closed, add everything to your phone's calendar:</p>
       <button class="btn ghost" data-act="exportICS">📅 Add to calendar (.ics)</button>`)}
     ${card('Backup', `<p class="small">${Sync.connected() ? 'Your data is also saved in your family space.' : 'Data lives only on this phone — export a backup now and then.'}</p>
@@ -777,7 +858,7 @@ VIEWS.settings = () => {
 };
 
 VIEWS.more = () => `<h1>More</h1><nav class="tiles big-tiles" aria-label="All sections">
-  ${[['#food', '🥗', 'Food & nutrition'], ['#tasks', '✅', 'Daily tasks & to-dos'], ['#money', '💰', 'Money'], ['#library', '📚', 'Read & listen'],
+  ${[['#health', '❤️', 'Health & kicks'], ['#food', '🥗', 'Food & nutrition'], ['#tasks', '✅', 'Daily tasks & to-dos'], ['#money', '💰', 'Money'], ['#library', '📚', 'Read & listen'],
     ['#lists', '🧳', 'Checklists'], ['#baby', '👶', 'Baby tracker'], ['#week', '📖', 'Week by week'], ['#account', '👫', 'Share with partner'],
     ['#emergency', '🚨', 'Emergency'], ['#settings', '⚙️', 'Settings & backup']]
     .map(([h, i, l]) => `<a href="${h}"><span>${i}</span>${l}</a>`).join('')}</nav>`;
@@ -869,22 +950,52 @@ const ACTIONS = {
     undoable(`Deleted ${m.name}`, () => { s.meds = s.meds.filter(x => x.id !== m.id); s.medLog = s.medLog.filter(l => l.medId !== m.id); });
   },
   // health
-  mood(el) { const h = healthDay(); h.mood = h.mood === el.dataset.val ? '' : el.dataset.val; commit(); },
+  mood(el) { const h = healthDay(); h.mood = h.mood === el.dataset.val ? '' : el.dataset.val; commit(); refreshFeeling(); },
+  moodReset() { healthDay().mood = ''; commit(); },
   symptom(el) {
     const h = healthDay(), v = el.dataset.val;
     h.symptoms = (h.symptoms || []).includes(v) ? h.symptoms.filter(x => x !== v) : [...(h.symptoms || []), v];
-    commit();
+    commit(); refreshFeeling();
   },
   symptomsDone() { healthDay().symptomsAsked = true; commit('Noted 👍'); },
-  sleep(el) { const h = healthDay(); h.sleep = String(h.sleep) === el.dataset.val ? '' : el.dataset.val; commit(); },
+  sleep(el) { const h = healthDay(); h.sleep = String(h.sleep) === el.dataset.val ? '' : el.dataset.val; commit(); refreshFeeling(); },
+  // ＋ sheet and friends
+  openAdd() { sheetAdd(); },
+  addFeeling() { sheetFeeling(); },
+  addWeight() {
+    const lw = lastWeight(), h = healthPeek() || {};
+    openSheet('Weight', `<p class="muted small">${lw ? `Last: ${lw.weight} kg, ${relDay(lw.date).toLowerCase()}` : 'Her weight today'}</p>
+      <div class="stepper big"><button class="btn ghost" data-act="wstep" data-d="-0.1" aria-label="Decrease">−</button><input type="number" step="0.1" inputmode="decimal" value="${h.weight || (lw ? lw.weight : '60.0')}" aria-label="Weight in kg"><button class="btn ghost" data-act="wstep" data-d="0.1" aria-label="Increase">+</button></div>
+      <div class="stepper"><button class="btn wide" data-act="saveWeight">Save</button></div>`);
+  },
+  addTodo() {
+    openSheet('To-do', `<form data-form="todo" class="form"><input name="text" required autofocus placeholder="e.g. Buy car seat by next week" aria-label="To-do"><button class="btn" type="submit">Add</button></form>`);
+  },
+  goContractions() { UI.healthTab = 'contractions'; location.hash = '#health'; },
+  goBaby() { location.hash = '#baby'; },
+  later(el) {
+    const z = Device.state.snooze && Device.state.snooze.date === isoDate() ? Device.state.snooze : { date: isoDate(), keys: [] };
+    z.keys.push(el.dataset.key);
+    Device.state.snooze = z; Device.save();
+    const card = el.closest('.ci');
+    card.classList.add('leaving');
+    setTimeout(render, 220);
+  },
+  waterSet(el) {
+    const fd = foodDay(), n = Number(el.dataset.n);
+    fd.water = fd.water === n ? n - 1 : n;
+    if (navigator.vibrate) navigator.vibrate(15);
+    commit();
+  },
   wstep(el) {
-    const i = document.getElementById('wval');
+    const i = el.closest('.stepper').querySelector('input');
     i.value = Math.max(20, (Number(i.value) || 60) + Number(el.dataset.d)).toFixed(1);
   },
-  saveWeight() {
-    const v = Number(document.getElementById('wval').value);
+  saveWeight(el) {
+    const v = Number((el.closest('.stepper').querySelector('input') || el.closest('.sheet-b').querySelector('input')).value);
     if (!(v >= 25 && v <= 250)) { toast('That weight looks off — check the number.'); return; }
     healthDay().weight = v.toFixed(1);
+    closeSheet();
     commit(`Saved ${v.toFixed(1)} kg`);
   },
   openBP() { sheetBP(); },
@@ -1142,7 +1253,7 @@ const CHANGES = {
 };
 
 // ---------- router & wiring ----------
-const TAB_OF = { home: 'home', week: 'home', health: 'health', meds: 'meds', visits: 'visits' };
+const TAB_OF = { home: 'home', week: 'home', meds: 'meds', visits: 'visits' };
 function render() {
   const [route, arg] = (location.hash.slice(1) || 'home').split('/');
   const view = VIEWS[route] || VIEWS.home;
