@@ -51,7 +51,7 @@ Nestling works fully offline on one phone. To share with your partner, connect a
 2. **SQL Editor → New query**: paste all of [`supabase/schema.sql`](supabase/schema.sql) and click **Run**. It is safe to re-run.
 3. **Project Settings → API**: copy the **Project URL** and the **anon / publishable** key into [`js/config.js`](js/config.js).
    The anon key is meant to be public. The row-level security in `schema.sql` is what keeps your data private.
-4. **Authentication → URL Configuration**: set **Site URL** to wherever you host Nestling (e.g. your GitHub Pages URL), so the confirmation-email links open the app.
+4. **Authentication → URL Configuration**: set **Site URL** to wherever you host Nestling (e.g. `https://shivam2511.github.io/pregjourn/`), so the confirmation-email links open the app.
    *(Optional)* **Authentication → Providers → Email**: turn off "Confirm email" to skip the confirmation step.
 5. In the app, go to **More → Share with partner**. Each of you creates an account. One of you taps **Create our family space** and shares the code (e.g. `ABCD-EF23`); the other taps **Join**.
 
@@ -68,7 +68,7 @@ How sync behaves:
 python3 -m http.server 8000   # then open http://localhost:8000
 ```
 
-To put it on your phones for free: GitHub **Settings → Pages → Deploy from a branch**, pick this branch and `/ (root)`. Open the URL on each phone and choose **Add to Home Screen**. It then opens like an app and works offline.
+To put it on your phones for free: GitHub **Settings → Pages → Deploy from a branch**, pick `main` and `/ (root)`. The app is then at **https://shivam2511.github.io/pregjourn/**. Open it on each phone and choose **Add to Home Screen**. It then opens like an app and works offline.
 
 ## Reminders
 Nestling sends notifications for doses, appointments (the evening before and 2 hours before), refills, test windows, the new week, and an evening check-in for daily tasks. It can do this while it's open or recently used. Web apps can't reliably notify when fully closed, so use **Settings → Add to calendar (.ics)** for alarms that always ring.
